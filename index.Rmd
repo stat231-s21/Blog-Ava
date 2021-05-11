@@ -1,7 +1,7 @@
 ---
-title: "Your Project Title Here"
+title: "Your Project Title Here-- AVATEST"
 author: "Ava Podell"
-date: "Add a date"
+date: "Add a date-AVATEST"
 output:
   rmdformats::readthedown:
     thumbnails: false
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align="center")
 library(tidyverse)
 ```
 
-# Header 1
+# Header 1 AVAA
 
 ## Header 2
 

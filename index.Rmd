@@ -1,5 +1,5 @@
 ---
-title: "Your Project Title Here-- AVATEST"
+title: "The Geography of U.S. Covid Impact"
 author: "Ava Podell"
 date: "Add a date-AVATEST"
 output:
@@ -14,20 +14,10 @@ library(tidyverse)
 ```
 
 # Header 1 AVAA
-
 ## Header 2
-
 ### Header 3
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For example, you can include **Bold** and _Italic_ and `Code` text.  For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-You should test out updating your GitHub Pages website:
-
-- clone your group's blog project repo in RStudio
-- update "Your Project Title Here" to a new title in the YAML header
-- knit `index.Rmd` 
-- commit and push BOTH the `index.Rmd` and the `index.html` files
-- go to https://stat231-s21.github.io/Blog-Ava/ to see the published test document (this is publicly available!)
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For example, you can include **Bold** and _Italic_ and `Code` text.
 
 ## Including code and plots
 
@@ -64,17 +54,67 @@ ggplot(data = cars, aes(x = speed, y = dist)) +
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
+# County Data {.tabset-pills}
 
-## Including links and images
-
-You can include [Links](https://www.datadreaming.org/post/r-markdown-theme-gallery/) and images ![cute pug](https://raw.githubusercontent.com/stat231-s21/Blog-Ava/main/images/cute_pug.png)
-
-You can embed a gif.
-
-![pugs](https://media.giphy.com/media/XHVmD4RyXgSjd8aUMb/giphy.gif)
+```{r}
+library("readxl")
+my_data <- read_excel("county_week26_data_fixed.xlsx", na = "NA")
+```
 
 
-# You can even create tabs if you want! {.tabset .tabset-fade .tabset-pills}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Including links and images
+
+You can include images ![cute pug](https://raw.githubusercontent.com/stat231-s21/Blog-Ava/main/images/cute_pug.png)
+
+
+## Sources used in this project
+
+- [Links](https://www.datadreaming.org/post/r-markdown-theme-gallery/) 
+- [https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/](https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/)
+- item 2
+- item 3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# How to make tabs {.tabset .tabset-fade .tabset-pills}
 
 ## Bulleted list
 
@@ -84,7 +124,6 @@ You can make a bulleted list like this:
 - item 2
 - item 3
 
-
 ## Numbered list
 
 You can make a numbered list like this
@@ -92,4 +131,5 @@ You can make a numbered list like this
 1. First thing I want to say
 2. Second thing I want to say
 3. Third thing I want to say
+
 

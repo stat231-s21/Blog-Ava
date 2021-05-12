@@ -1,7 +1,7 @@
 ---
 title: "The Geography of U.S. Covid Impact"
 author: "Ava Podell"
-date: "Add a date-AVATEST"
+date: "5/18/21"
 output:
   rmdformats::readthedown:
     thumbnails: false

@@ -129,7 +129,30 @@ ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hes
 
 ## H2: Analysis of Maps
 
-IDK yet but theres something about how state lines really impact fill
+IDK yet but theres something about how state lines really impact fill. I ran a cluser analysis to see if I was making this trend up or not
+
+Try out clustering
+```{r}
+my_data0_map_cluster <- my_data0_map %>%
+  select(est_hesitant, long, lat)
+
+
+set.seed(15)
+library(mclust)
+county_clusts <- my_data0_map_cluster %>%
+  kmeans(centers = 48)%>%
+  fitted("classes")%>%
+  as.character()
+
+my_data0_map_cluster <- my_data0_map_cluster %>% mutate(cluster = county_clusts)
+
+my_data0_map_cluster %>% ggplot(aes(x = long, y = lat)) +
+  geom_point(aes(color = cluster), alpha = 0.5)
+```
+
+
+
+
 
 # H1: Including links and images
 

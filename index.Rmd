@@ -11,15 +11,159 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align="center")
 library(tidyverse)
+library(datasets)
+library(viridis)
+library(maps)
+library(leaflet)
+library("readxl")
+my_data <- read_excel("county_week26_data_fixed.xlsx", na = "NA")
+census <- read_excel("census_est_tab.xlsx", na = "NA")
 ```
 
-# Header 1 AVAA
-## Header 2
-### Header 3
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For example, you can include **Bold** and _Italic_ and `Code` text.
+# H1: County Data 
+Using CDC Data set of county by county Hesitancy data
 
-## Including code and plots
+## H2: Merging Hesitancy and Census Population Data {.tabset .tabset-fade .tabset-pills}
+
+### H3: Fauci with a headache, or ...
+![fauchi](https://media.giphy.com/media/JmD9mkDmzvXE7nxy7j/giphy.gif)
+
+### H3: Data Wrangling
+
+Formatting then merging two data frames
+
+```{r}
+my_data0 <- my_data %>%
+  select(!c("Percent non-Hispanic Native Hawaiian/Pacific Islander", "FIPS Code"))%>%
+  rename(region = State, subregion = `County Name`) %>%
+  mutate(region = tolower(region), subregion = tolower(subregion))%>%
+  rename(est_hesitant = "Estimated hesitant")%>%
+  rename(est_strong_hesitant = "Estimated strongly hesitant")%>%
+  rename(svi_cat = "SVI Category"  )%>%
+  rename(svi = "Social Vulnerability Index (SVI)"  )%>%
+  rename(pct_full_vaxed = "Percent adults fully vaccinated against COVID-19 as of 3/30/2021")
+
+my_data0$subregion <- str_remove(my_data0$subregion, " county.*")
+my_data0$subregion <- str_remove(my_data0$subregion, ",.*")
+
+
+census0 <- census%>%
+  mutate(subregion = gsub("\\.", "", subregion))%>%
+  mutate(subregion = tolower(subregion))%>%
+  mutate(region = gsub(".*, ", "",subregion)) %>% 
+  mutate(subregion = gsub(", .*", "", subregion))%>%
+  rename(pop_est = "2019_pop_est")
+census0$subregion <- str_remove(census0$subregion, " county.*")
+
+my_data0 <- my_data0 %>%
+  inner_join(census0, by =c("subregion", "region"))
+head(my_data0, 100)
+```
+
+
+
+
+
+## H2: Making the maps {.tabset .tabset-fade .tabset-pills}
+
+### H3: Code
+
+Creating mapable data set
+
+```{r}
+usa_counties <- map_data(map = "county", region = ".")
+
+my_data0_map <- my_data0 %>%
+  inner_join(usa_counties, by =c("subregion", "region"))
+```
+
+Mapping of hesitancy
+
+```{r,eval= FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")  
+```
+
+Mapping of strong hesitancy
+
+```{r, eval=FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")  
+```
+
+
+### H3: Hesitancy Map
+
+```{r,echo= FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")  
+```
+
+### H3: Strong Hesitancy Map
+
+```{r, echo= FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")  
+```
+
+## H2: Analysis of Maps
+
+IDK yet but theres something about how state lines really impact fill
+
+# H1: Including links and images
+
+![fauchi](https://media.giphy.com/media/JmD9mkDmzvXE7nxy7j/giphy.gif)
+
+## H2: Sources used in this project
+
+- [Links](https://www.datadreaming.org/post/r-markdown-theme-gallery/) 
+- [https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/](https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/)
+- item 2
+- item 3
+
+
+# How to make tabs {.tabset .tabset-fade .tabset-pills}
+
+## Bulleted list
+
+You can make a bulleted list like this:
+
+- item 1
+- item 2
+- item 3
+
+## Numbered list
+
+You can make a numbered list like this
+
+1. First thing I want to say
+2. Second thing I want to say
+3. Third thing I want to say
+
+
+
+# Including code and plots
 
 You can embed code as normal, for example:
 
@@ -54,82 +198,5 @@ ggplot(data = cars, aes(x = speed, y = dist)) +
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-# County Data {.tabset-pills}
-
-```{r}
-library("readxl")
-my_data <- read_excel("county_week26_data_fixed.xlsx", na = "NA")
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Including links and images
-
-You can include images ![cute pug](https://raw.githubusercontent.com/stat231-s21/Blog-Ava/main/images/cute_pug.png)
-
-
-## Sources used in this project
-
-- [Links](https://www.datadreaming.org/post/r-markdown-theme-gallery/) 
-- [https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/](https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/)
-- item 2
-- item 3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# How to make tabs {.tabset .tabset-fade .tabset-pills}
-
-## Bulleted list
-
-You can make a bulleted list like this:
-
-- item 1
-- item 2
-- item 3
-
-## Numbered list
-
-You can make a numbered list like this
-
-1. First thing I want to say
-2. Second thing I want to say
-3. Third thing I want to say
 
 

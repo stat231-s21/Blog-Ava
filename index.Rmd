@@ -24,6 +24,7 @@ library(fiftystater)
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(mapproj)
 options(scipen = 999)
 my_data <- read_excel("county_week26_data_fixed.xlsx", na = "NA")
 census <- read_excel("census_est_tab.xlsx", na = "NA")
@@ -35,12 +36,12 @@ usa_states <- map_data(map = "state", region = ".")
 Back in March, I created my PUG Shiny project with a focus on COVID vaccine distribution. At the time, the issue facing the united states was primarily one of distribution: people who wanted the vaccine couldn't get it. Eligibility was restricted state by state to allocate a precious resource. Even people who were eligible needed to get lucky and navigate online sign up forms, vouching for fewer spots than people. Here's my Shiny App, improved and updated with the latest data:
 
 
-<iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/Lab04a-shiny-babynames/?_ga=2.210917077.1115564583.1620957127-2030387662.1615303840"> </iframe>`
+<!-- <iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/Lab04a-shiny-babynames/?_ga=2.210917077.1115564583.1620957127-2030387662.1615303840"> </iframe>` -->
+
+<iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/forBlog/?_ga=2.45634532.1115564583.1620957127-2030387662.1615303840"> </iframe>`
 
 
 
-
-Then my app
 
 ```{r}
 ###############

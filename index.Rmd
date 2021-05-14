@@ -32,179 +32,13 @@ usa_states <- map_data(map = "state", region = ".")
 ```
 
 ![Vaccine Line in Boston Massachusets, March 2021](https://bostonglobe-prod.cdn.arcpublishing.com/resizer/W-xCu9AyrlXYOBz5z64krF4bnXU=/1440x0/cloudfront-us-east-1.images.arcpublishing.com/bostonglobe/Q3NX5G4PELPYDJ5C7AWWCGNZ4Y.jpg)
+
 # Introduction 
+
 Back in March, I created my PUG Shiny project with a focus on COVID vaccine distribution. At the time, the issue facing the united states was primarily one of distribution: people who wanted the vaccine couldn't get it. Eligibility was restricted state by state to allocate a precious resource. Even people who were eligible needed to get lucky and navigate online sign up forms, vouching for fewer spots than people. Here's my Shiny App, improved and updated with the latest data:
 
 
-<!-- <iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/Lab04a-shiny-babynames/?_ga=2.210917077.1115564583.1620957127-2030387662.1615303840"> </iframe>` -->
-
-<iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/forBlog/?_ga=2.45634532.1115564583.1620957127-2030387662.1615303840"> </iframe>`
-
-
-
-
-```{r}
-###############
-# import data #
-###############
-both <- read_csv("both.csv")
-both[, "week"]<-as.Date(both$week, "%m/%d/%Y")
-both <- both[order(both$"week"),] 
-
-
-###################################################
-# CHOICE VALUES AND LABELS#
-###################################################
-vacc_choice_values <- c("_m","_p","_both")
-vacc_choice_names <- c("Moderna","Pfizer","Both Moderna and Pfizer")
-names(vacc_choice_values) <- vacc_choice_names
-
-dose_choice_values <- c("all_doses", "cumulative_doses")
-dose_choice_names <- c("Total New Doses this Week", "Cumulative Doses to Date")
-names(dose_choice_values) <- dose_choice_names
-
-state_choice_values <- unique(both$jurisdiction)
-state_choice_names <- sapply(state_choice_values, FUN = str_to_title)
-names(state_choice_values) <- state_choice_names
-
-week_choices <- unique(both$week)
-
-
-
-
-
-
-############
-#    ui    #
-############
-ui <- fluidPage(
-  
-  titlePanel(strong("Weekly Vaccine Allocations by State")),
-  
-  tabPanel(
-    h1(style = "font-family:Impact",
-       "Map"),
-    sidebarLayout(
-      sidebarPanel(
-        #SELECT VACCINE BRAND
-        selectInput(inputId = "vaccvar", 
-                    label = "Choose a vaccine type to plot:", 
-                    choices = vacc_choice_values, 
-                    selected = "_p"),
-        #SELECT DOSE NUMBER
-        selectInput(inputId = "dosevar", 
-                    label = "Choose a dose number to plot:", 
-                    choices = dose_choice_values, 
-                    selected = "first_"),
-        #SELECT MULTIPLE STATES
-        selectizeInput(inputId = "state_name", 
-                       label = "Pick states to visualize:", 
-                       choices = state_choice_values, 
-                       selected = "california", 
-                       multiple = TRUE),
-        #SLIDER DATE
-        sliderTextInput(inputId = "slider", 
-                        label = h4(tags$b("Choose a week to plot:")), 
-                        choices = week_choices, 
-                        selected = "2020-12-21", 
-                        grid = TRUE)),
-      mainPanel(plotOutput(outputId = "distPlot"))
-    )
-  )
-)
-#~~~~~~~~~~~#
-# END OF UI #
-#~~~~~~~~~~~#
-
-
-
-
-
-
-
-############
-# server   #
-############
-
-server <- function(input, output) {
-  
-  output$distPlot <- renderPlot({
-    
-    dat_vacc <- both%>%
-      select(c("jurisdiction", "week", contains(input$vaccvar)))%>%
-      select(c("jurisdiction", "week", contains(input$dosevar)))%>%
-      filter(week == input$slider)
-    
-    p <-ggplot(data = dat_vacc %>%filter(jurisdiction %in% input$state_name), aes(map_id = jurisdiction)) +    
-      geom_map(aes(fill = get(paste(input$dosevar, input$vaccvar, sep = ""))), map = fifty_states) + 
-      
-      ###WANT A MAX VALUE FOR FIRST, SECOND, ALL, AND CUMULATIVE
-      
-      #scale_fill_gradient(low="white", high="dark green") +
-      #scale_fill_gradient(low="blue", mid = "white", high="red") +
-      scale_fill_gradientn(colors = rainbow(3)) +
-      scale_fill_gradientn(colors = c("white", "blue", "red")) +
-      #scale_fill_continuous(colors = c(rainbow(5))) +
-      expand_limits(x = fifty_states$long, y = fifty_states$lat) +
-      
-      coord_map() +
-      scale_x_continuous(breaks = NULL) + 
-      scale_y_continuous(breaks = NULL) +
-      
-      labs(x = "", y = "", 
-           title = str_wrap(
-             paste(
-               names(which(vacc_choice_values == input$vaccvar)), 
-               names(which(dose_choice_values == input$dosevar)),
-               " to", 
-               paste(str_to_title(unlist(input$state_name)), collapse=', ')
-             ), 
-             80),
-           subtitle = paste("Week of ", input$slider))+
-      
-      theme(legend.position = "left", 
-            legend.direction = "vertical",
-            panel.background = element_rect(fill = alpha("light blue", 0.3)), 
-            legend.key.size = unit(1.5, "cm"),
-            legend.key.width = unit(0.5,"cm"),
-            text=element_text(size=16,  family="serrif"), 
-            plot.title = element_text(hjust = 0.5),
-            plot.subtitle = element_text(hjust = 0.5))+
-      
-      labs(fill = "Doses")
-    
-    
-    plot_scale <- function(dosevar) {
-      
-      if(input$dosevar== "combined_doses" & input$vaccvar == "_both")
-        scale_fill_gradient(low="blue", high="red", limits = c(0, 40000000))
-      
-      else if(input$vaccvar == "_both" & input$dosevar != "cumulative_doses")
-        scale_fill_gradient(low="blue", high="red", limits = c(0, 2000000))
-      
-      else if(input$dosevar%in% c("first_dose", "second_dose"))
-        scale_fill_gradient(low="blue", high="red", limits = c(0, 650000))
-      
-      else if(input$dosevar == "all_doses")
-        scale_fill_gradient(low="blue", high="red", limits = c(0, 750000))
-      
-      else if(input$dosevar== "cumulative_doses" & input$vaccvar == "_both")
-        scale_fill_gradient(low="blue", high="red", limits = c(0, 22000000))
-      else if(input$dosevar== "cumulative_doses")
-        scale_fill_gradient(low="blue", high="red", limits = c(0, 22000000))
-    }
-    
-    p + plot_scale()
-  })
-  
-}
-
-shinyApp(ui = ui, server = server)
-
-```
-
-
-
+<!-- <iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/forBlog/?_ga=2.45634532.1115564583.1620957127-2030387662.1615303840"> </iframe>` -->
 
 
 
@@ -217,48 +51,44 @@ Over the past six weeks, the supply chain has greatly improved, and access is no
 
 
 # Mapping County-Level Vaccine Hesitancy 
-I investigated a CDC published dataset titled "Vaccine Hesitancy for COVID-19: County and local estimates." The dataset was produced by the ASPE, the Office of the Assistant Secretary for Planning and Evaluation, of the U.S. Department of Health and Human Services. Specifically, the data was collected via the U.S. Census Bureau's Household Pulse Survey. 
+
+## Inter-Agency Knowledge Sharing
+
+I investigated a CDC published dataset titled ["Vaccine Hesitancy for COVID-19: County and local estimates."](https://data.cdc.gov/Vaccinations/Vaccine-Hesitancy-for-COVID-19-County-and-local-es/q9mh-h2tw) The dataset comes from [a publication by the ASPE](https://aspe.hhs.gov/pdf-report/vaccine-hesitancy), the Office of the Assistant Secretary for Planning and Evaluation, of the U.S. Department of Health and Human Services. Specifically, the data was collected via the [U.S. Census Bureau's Household Pulse Survey](https://www.census.gov/data/tables/2021/demo/hhp/hhp28.html), 2021 Week 28, April 14-26. 
 
 
 ## H2: Variables of Interest
 
-The dataset contained several demographic variables measured for each U.S. county. The variables of interest were "Estimated Hesitant" and "Estimated Strongly Hesitant", which measured the percent of adults in each county who indicated either hesitant, or strongly hesitant, respectively, to get vaccinated. I assume that survey respondants are all adults who have not yet received any covid vaccine. 
+The dataset contained several demographic variables measured for each U.S. county. The variables of interest for this project are  *"Estimated Hesitant"* and *"Estimated Strongly Hesitant"*, which measure the percent of adults in each county who indicated they are either __hesitant__, or __strongly hesitant__, respectively, to get vaccinated. Due to the phrasing of the variable description, I assume that survey respondents who indicated either "Hesitant" or "Strongly Hesitant" are all adults who have not yet received a covid vaccine. You can check out the ASPE's methodology for these estimates [here](https://aspe.hhs.gov/system/files/pdf/265341/vaccine-hesitancy-COVID-19-Methodology.pdf). 
 
 ## H2: Data Wrangling {.tabset .tabset-fade .tabset-pills}
 
-### H3: Fauci with a headache, or ...
+### H3: Fauci with a headache, or ... 
 ![fauchi](https://media.giphy.com/media/JmD9mkDmzvXE7nxy7j/giphy.gif)
 
 ### H3: Data Wrangling
 
 
-# ```{r}
-# my_data0 <- my_data %>%
-#   select(!c("Percent non-Hispanic Native Hawaiian/Pacific Islander", "FIPS Code"))%>%
-#   rename(region = State, subregion = `County Name`) %>%
-#   mutate(region = tolower(region), subregion = tolower(subregion))%>%
-#   rename(est_hesitant = "Estimated hesitant")%>%
-#   rename(est_strong_hesitant = "Estimated strongly hesitant")%>%
-#   rename(svi_cat = "SVI Category"  )%>%
-#   rename(svi = "Social Vulnerability Index (SVI)"  )%>%
-#   rename(pct_full_vaxed = "Percent adults fully vaccinated against COVID-19 as of 3/30/2021")
-# 
-# my_data0$subregion <- str_remove(my_data0$subregion, " county.*")
-# my_data0$subregion <- str_remove(my_data0$subregion, ",.*")
-# 
-# 
-# census0 <- census%>%
-#   mutate(subregion = gsub("\\.", "", subregion))%>%
-#   mutate(subregion = tolower(subregion))%>%
-#   mutate(region = gsub(".*, ", "",subregion)) %>% 
-#   mutate(subregion = gsub(", .*", "", subregion))%>%
-#   rename(pop_est = "2019_pop_est")
-# census0$subregion <- str_remove(census0$subregion, " county.*")
-# 
-# my_data0 <- my_data0 %>%
-#   inner_join(census0, by =c("subregion", "region"))
-# head(my_data0, 100)
-# ```
+```{r, eval=FALSE}
+my_data0 <- my_data %>%
+  #select columns relevant to my investigation
+  select(c("County Name","State","Estimated hesitant", "Estimated strongly hesitant","Social Vulnerability Index (SVI)","SVI Category","Ability to handle a COVID-19 outbreak (CVAC)","CVAC Category","Percent adults fully vaccinated against COVID-19 as of 3/30/2021"))%>%
+  
+  #change names to lowercase for easy merging with map dataset
+  mutate(State = tolower(State), `County Name` = tolower(`County Name`))%>%
+  
+  #rename columns to r-friendly names
+  rename(region = State, subregion = `County Name`) %>%
+  rename(est_hesitant = "Estimated hesitant")%>%
+  rename(est_strong_hesitant = "Estimated strongly hesitant")%>%
+  rename(svi_cat = "SVI Category"  )%>%
+  rename(svi = "Social Vulnerability Index (SVI)"  )%>%
+  rename(pct_full_vaxed = "Percent adults fully vaccinated against COVID-19 as of 3/30/2021")
+
+ #edit subregion (county name) values to match their equivs in map dataset
+ my_data0$subregion <- str_remove(my_data0$subregion, " county.*")
+ my_data0$subregion <- str_remove(my_data0$subregion, ",.*")
+```
 
 
 

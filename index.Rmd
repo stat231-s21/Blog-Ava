@@ -38,9 +38,7 @@ usa_states <- map_data(map = "state", region = ".")
 Back in March, I created my PUG Shiny project with a focus on COVID vaccine distribution. At the time, the issue facing the united states was primarily one of distribution: people who wanted the vaccine couldn't get it. Eligibility was restricted state by state to allocate a precious resource. Even people who were eligible needed to get lucky and navigate online sign up forms, vouching for fewer spots than people. Here's my Shiny App, improved and updated with the latest data:
 
 
-<!-- <iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/forBlog/?_ga=2.45634532.1115564583.1620957127-2030387662.1615303840"> </iframe>` -->
-
-
+<iframe height="700" width="100%" frameborder="no" src="https://apodell.shinyapps.io/updatedShinyPug/"> </iframe>`
 
 ## Motivation
 Over the past six weeks, the supply chain has greatly improved, and access is no longer such a pressing issue. The issues facing the country have evolved: the issue now is acheiving heard immunity, and getting everyone vaccinated. In March, I didn't know anyone who had gotten a vaccine. But now in April, I don't know anyone who __hasn't__ gotten one. I wanted to map out where in the country people are the most hesitant to get vaccinated. Knowing the most resistant geographies could be useful information for government organizations to focus their vaccine advocacy efforts.
@@ -226,11 +224,11 @@ Try out clustering
 
 
 
-# H1: Including links and images
+# Conclusion
 
-![fauchi](https://media.giphy.com/media/JmD9mkDmzvXE7nxy7j/giphy.gif)
+My conclusion blah blah blah
 
-## H2: Sources used in this project
+## Sources used in this project
 
 <!-- full map page on cdc data site -->
 - [https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/](https://data.cdc.gov/stories/s/Vaccine-Hesitancy-for-COVID-19/cnd2-a6zw/)

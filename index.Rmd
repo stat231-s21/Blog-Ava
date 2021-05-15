@@ -50,26 +50,27 @@ Over the past six weeks, the supply chain has greatly improved, and access is no
 
 
 
-# Mapping County-Level Vaccine Hesitancy 
+# Working with Public Health Data Sets
 
 ## Inter-Agency Knowledge Sharing
 
 I investigated a CDC published dataset titled ["Vaccine Hesitancy for COVID-19: County and local estimates."](https://data.cdc.gov/Vaccinations/Vaccine-Hesitancy-for-COVID-19-County-and-local-es/q9mh-h2tw) The dataset comes from [a publication by the ASPE](https://aspe.hhs.gov/pdf-report/vaccine-hesitancy), the Office of the Assistant Secretary for Planning and Evaluation, of the U.S. Department of Health and Human Services. Specifically, the data was collected via the [U.S. Census Bureau's Household Pulse Survey](https://www.census.gov/data/tables/2021/demo/hhp/hhp28.html), 2021 Week 28, April 14-26. 
 
 
-## H2: Variables of Interest
+## Variables of Interest
 
 The dataset contained several demographic variables measured for each U.S. county. The variables of interest for this project are  *"Estimated Hesitant"* and *"Estimated Strongly Hesitant"*, which measure the percent of adults in each county who indicated they are either __hesitant__, or __strongly hesitant__, respectively, to get vaccinated. Due to the phrasing of the variable description, I assume that survey respondents who indicated either "Hesitant" or "Strongly Hesitant" are all adults who have not yet received a covid vaccine. You can check out the ASPE's methodology for these estimates [here](https://aspe.hhs.gov/system/files/pdf/265341/vaccine-hesitancy-COVID-19-Methodology.pdf). 
 
-## H2: Data Wrangling {.tabset .tabset-fade .tabset-pills}
+## Data Wrangling {.tabset .tabset-fade .tabset-pills}
 
-### H3: Fauci with a headache, or ... 
+### Fauci with a headache, or ... 
 ![fauchi](https://media.giphy.com/media/JmD9mkDmzvXE7nxy7j/giphy.gif)
 
-### H3: Data Wrangling
+### Data Wrangling
 
+#### First, I cleaned up the CDC dataset: 
 
-```{r, eval=FALSE}
+```{r, message=FALSE, warning=FALSE}
 my_data0 <- my_data %>%
   #select columns relevant to my investigation
   select(c("County Name","State","Estimated hesitant", "Estimated strongly hesitant","Social Vulnerability Index (SVI)","SVI Category","Ability to handle a COVID-19 outbreak (CVAC)","CVAC Category","Percent adults fully vaccinated against COVID-19 as of 3/30/2021"))%>%
@@ -90,72 +91,78 @@ my_data0 <- my_data %>%
  my_data0$subregion <- str_remove(my_data0$subregion, ",.*")
 ```
 
+#### Then, I added mapping capabilites by merging `my_data0` with the `usa_counties` dataset
+
+```{r}
+usa_counties <- map_data(map = "county", region = ".")
+
+my_data0_map <- my_data0 %>%
+  inner_join(usa_counties, by =c("subregion", "region"))
+```
 
 
 
+# Mapping County-Level Vaccine Hesitancy {.tabset .tabset-fade .tabset-pills}
 
-## H2: Making the maps {.tabset .tabset-fade .tabset-pills}
+## Hesitancy Map
 
-### H3: Code
+```{r,echo= FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")
+```
 
-Creating mapable data set
+## __Strong__ Hesitancy Map
 
-# ```{r}
-# usa_counties <- map_data(map = "county", region = ".")
-# 
-# my_data0_map <- my_data0 %>%
-#   inner_join(usa_counties, by =c("subregion", "region"))
-# ```
+```{r, echo= FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents STRONGLY hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")
+```
 
-Mapping of hesitancy
+## The Code behind it all
 
-# ```{r,eval= FALSE}
-# ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
-#   geom_polygon(color = "white", size = 0.05) +
-#   theme_void() +
-#   coord_fixed(ratio = 1.3) +
-#   labs(fill = "Proportion of residents hesitant to be vaccinated") +
-#   theme(legend.position="bottom")+
-#   scale_fill_distiller(palette = "Spectral")  
-# ```
+Mapping of County Vaccine "Hesitancy" Rates
+
+```{r,eval= FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")
+```
 
 Mapping of strong hesitancy
 
-# ```{r, eval=FALSE}
-# ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
-#   geom_polygon(color = "white", size = 0.05) +
-#   theme_void() +
-#   coord_fixed(ratio = 1.3) +
-#   labs(fill = "Proportion of residents STRONGLY hesitant to be vaccinated") +
-#   theme(legend.position="bottom")+
-#   scale_fill_distiller(palette = "Spectral")  
-# ```
+```{r, eval=FALSE}
+ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
+  geom_polygon(color = "white", size = 0.05) +
+  theme_void() +
+  coord_fixed(ratio = 1.3) +
+  labs(fill = "Proportion of residents STRONGLY hesitant to be vaccinated") +
+  theme(legend.position="bottom")+
+  scale_fill_distiller(palette = "Spectral")
+```
 
 
-### H3: Hesitancy Map
 
-# ```{r,echo= FALSE}
-# ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
-#   geom_polygon(color = "white", size = 0.05) +
-#   theme_void() +
-#   coord_fixed(ratio = 1.3) +
-#   labs(fill = "Proportion of residents hesitant to be vaccinated") +
-#   theme(legend.position="bottom")+
-#   scale_fill_distiller(palette = "Spectral")  
-# ```
 
-### H3: Strong Hesitancy Map
 
-# ```{r, echo= FALSE}
-# ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
-#   geom_polygon(color = "white", size = 0.05) +
-#   theme_void() +
-#   coord_fixed(ratio = 1.3) +
-#   labs(fill = "Proportion of residents STRONGLY hesitant to be vaccinated") +
-#   theme(legend.position="bottom")+
-#   scale_fill_distiller(palette = "Spectral")  
-# ```
 
+
+# H1: Analysis of Maps
+
+I observe a striking visual pattern in the mapping of county hesitancy levels. In many places on the map, we see areas that dont
 ### H3: zooming in on distinct areas
 # ```{r midwest}
 # ggplot() +
@@ -182,12 +189,6 @@ Mapping of strong hesitancy
 #    # remove legend!
 #   guides(fill = FALSE)
 # ```
-
-
-
-# H1: Analysis of Maps
-
-I observe a striking visual pattern in the mapping of county hesitancy levels. In many places on the map, we see areas that dont
 
 
 IDK yet but theres something about how state lines really impact fill. I ran a cluser analysis to see if I was making this trend up or not
@@ -240,21 +241,4 @@ Try out clustering
 - [methodology](https://aspe.hhs.gov/system/files/pdf/265341/vaccine-hesitancy-COVID-19-Methodology.pdf)
 
 
-# How to make tabs {.tabset .tabset-fade .tabset-pills}
-
-## Bulleted list
-
-You can make a bulleted list like this:
-
-- item 1
-- item 2
-- item 3
-
-## Numbered list
-
-You can make a numbered list like this
-
-1. First thing I want to say
-2. Second thing I want to say
-3. Third thing I want to say
 

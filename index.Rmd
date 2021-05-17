@@ -25,13 +25,15 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(mapproj)
+library(mclust)
 options(scipen = 999)
 my_data <- read_excel("county_week26_data_fixed.xlsx", na = "NA")
 census <- read_excel("census_est_tab.xlsx", na = "NA")
 usa_states <- map_data(map = "state", region = ".") 
 ```
 
-![Vaccine Line in Boston Massachusets, March 2021](https://bostonglobe-prod.cdn.arcpublishing.com/resizer/W-xCu9AyrlXYOBz5z64krF4bnXU=/1440x0/cloudfront-us-east-1.images.arcpublishing.com/bostonglobe/Q3NX5G4PELPYDJ5C7AWWCGNZ4Y.jpg)
+![Anti-Vax Protesters in Texas](https://thumbnails.texastribune.org/cSUakDZ0lGgZjdfZwOOQIjqocDc=/2500x1675/smart/filters:quality(75)/https://static.texastribune.org/media/files/13908c124949f4dd2f526d59a8492c6e/Reopen%20Texas%20Protest%20JV%20TT%2005.jpg)
+
 
 # Introduction 
 
@@ -42,9 +44,6 @@ Back in March, I created my PUG Shiny project with a focus on COVID vaccine dist
 
 ## Motivation
 Over the past six weeks, the supply chain has greatly improved, and access is no longer such a pressing issue. The issues facing the country have evolved: the issue now is acheiving heard immunity, and getting everyone vaccinated. In March, I didn't know anyone who had gotten a vaccine. But now in April, I don't know anyone who __hasn't__ gotten one. I wanted to map out where in the country people are the most hesitant to get vaccinated. Knowing the most resistant geographies could be useful information for government organizations to focus their vaccine advocacy efforts.
-
-
-![Anti-Vax Protesters in Texas](https://thumbnails.texastribune.org/cSUakDZ0lGgZjdfZwOOQIjqocDc=/2500x1675/smart/filters:quality(75)/https://static.texastribune.org/media/files/13908c124949f4dd2f526d59a8492c6e/Reopen%20Texas%20Protest%20JV%20TT%2005.jpg)
 
 
 
@@ -95,7 +94,10 @@ my_data0 <- my_data %>%
 usa_counties <- map_data(map = "county", region = ".")
 
 my_data0_map <- my_data0 %>%
-  inner_join(usa_counties, by =c("subregion", "region"))
+  inner_join(usa_counties, by =c("subregion", "region"))%>%
+  rename(group_county = group)%>%
+  rename(order_county = order)
+
 ```
 
 
@@ -105,11 +107,11 @@ my_data0_map <- my_data0 %>%
 ## Hesitancy Map
 
 ```{r,echo= FALSE}
-ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
-  geom_polygon(color = "white", size = 0.05) +
+ggplot(my_data0_map, aes(x = long, y = lat, group = group_county, fill = est_hesitant)) +
+  geom_polygon(color = "blue", size = 0.05) +
   theme_void() +
   coord_fixed(ratio = 1.3) +
-  labs(fill = "Proportion of residents hesitant to be vaccinated") +
+  labs(fill = "Proportion of Residents per County Hesitant to be Vaccinated") +
   theme(legend.position="bottom")+
   scale_fill_distiller(palette = "Spectral")
 ```
@@ -117,11 +119,11 @@ ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant))
 ## __Strong__ Hesitancy Map
 
 ```{r, echo= FALSE}
-ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
-  geom_polygon(color = "white", size = 0.05) +
+ggplot(my_data0_map, aes(x = long, y = lat, group = group_county, fill = est_strong_hesitant)) +
+  geom_polygon(color = "blue", size = 0.05) +
   theme_void() +
   coord_fixed(ratio = 1.3) +
-  labs(fill = "Proportion of residents STRONGLY hesitant to be vaccinated") +
+  labs(fill = "Proportion of Residents STRONGLY hesitant to be Vaccinated") +
   theme(legend.position="bottom")+
   scale_fill_distiller(palette = "Spectral")
 ```
@@ -131,7 +133,7 @@ ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hes
 Mapping of County Vaccine "Hesitancy" Rates
 
 ```{r,eval= FALSE}
-ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant)) +
+ggplot(my_data0_map, aes(x = long, y = lat, group = group_county, fill = est_hesitant)) +
   geom_polygon(color = "white", size = 0.05) +
   theme_void() +
   coord_fixed(ratio = 1.3) +
@@ -143,7 +145,7 @@ ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_hesitant))
 Mapping of strong hesitancy
 
 ```{r, eval=FALSE}
-ggplot(my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant)) +
+ggplot(my_data0_map, aes(x = long, y = lat, group = group_county, fill = est_strong_hesitant)) +
   geom_polygon(color = "white", size = 0.05) +
   theme_void() +
   coord_fixed(ratio = 1.3) +
@@ -161,7 +163,7 @@ I observed a striking visual pattern in this mapping of county hesitancy levels.
 
 ```{r midwest, warning=FALSE, message=FALSE, echo=FALSE}
 ggplot() +
-  geom_polygon(data = my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant), color = "blue", size = 0.05) +
+  geom_polygon(data = my_data0_map, aes(x = long, y = lat, group = group_county, fill = est_strong_hesitant), color = "blue", size = 0.05) +
   #geom_polygon(data = usa_states, aes(x = long, y = lat, group = group),fill="NA", colour = "black") +
   theme_void() +
   coord_fixed(xlim = c(-110, -90),  ylim = c(42, 49.5), ratio = 1.3) +
@@ -174,7 +176,7 @@ The prevelance rates of strongly hesitant residents seems to be clustered into f
 
 ```{r midwest state, message=FALSE, echo=FALSE}
 ggplot() +
-  geom_polygon(data = my_data0_map, aes(x = long, y = lat, group = group, fill = est_strong_hesitant), color = "blue", size = 0.08) +
+  geom_polygon(data = my_data0_map, aes(x = long, y = lat, group = group_county, fill = est_strong_hesitant), color = "blue", size = 0.08) +
   geom_polygon(data = usa_states, aes(x = long, y = lat, group = group),fill="NA", colour = "black") +
   geom_text(aes(label = "South Dakota", x = -100, y = 45)) +
   geom_text(aes(label = "North Dakota", x = -100, y = 48)) +
@@ -191,156 +193,94 @@ ggplot() +
   scale_fill_distiller(palette = "Spectral")
 ```
 
-From this test, it seems like in state identity might have some impact on county covid hesitancy rates. Both Montana and North Dakota voted red in the 2020 election
-
-I ran a cluser analysis to see if I was making this trend up or not
+From this test, it appears that county hesitancy rates are clustered state identity. Why else would we see such distinct patterns of hesitancy on state borders? I ran a cluser analysis to see if I was making this trend up or not.
 
 
 
-# {.tabset .tabset-fade .tabset-pills}
+## {.tabset .tabset-fade .tabset-pills}
 
-## Code
+### Code
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
 
-Hesitant Clusters
-```{r, eval=FALSE}
-my_data0_map_cluster <- my_data0_map %>%
-  select(est_hesitant, long, lat)
-
-head(my_data0_map_cluster, 20)
-
-set.seed(15)
-library(mclust)
-county_clusts <- my_data0_map_cluster %>%
-  kmeans(centers = 48)%>%
-  fitted("classes")%>%
-  as.character()
-
-my_data0_map_cluster <- my_data0_map_cluster %>% mutate(cluster = county_clusts)
-
-my_data0_map_cluster %>% ggplot(aes(x = long, y = lat)) +
-  geom_point(aes(color = cluster), alpha = 0.5)+
-  coord_fixed(ratio = 1.3)+
-  ggtitle("My-style Hesitant, unstandardized")
-```
-
-Strongly Hesitant Clusters
-```{r, eval=FALSE}
-my_data0_map_cluster <- my_data0_map %>%
-  select(est_strong_hesitant, long, lat)
-
-set.seed(15)
-library(mclust)
-county_clusts <- my_data0_map_cluster %>%
-  kmeans(centers = 48)%>%
-  fitted("classes")%>%
-  as.character()
-
-my_data0_map_cluster <- my_data0_map_cluster %>% mutate(cluster = county_clusts)
-
-my_data0_map_cluster %>% ggplot(aes(x = long, y = lat)) +
-  geom_point(aes(color = cluster), alpha = 0.5)+
-  coord_fixed(ratio = 1.3)+
-  ggtitle("My-style Strong Hesitant, unstandardized")
-```
+head(my_data0_map)
 
 
-
-## Maps
-
-Coppied Code: HESITANT
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-set.seed(23)
-vars <- c("est_hesitant", "long", "lat")
-km2_out <- kmeans(my_data0_map[,vars], centers=48)
-
-
-# add cluster assignment to the data frame
-ma_samp_clust2 <- my_data0_map %>%
-  mutate(clust2 = as.character(km2_out$cluster))
-
-# visualize the cluster assignments and centroids
-ggplot(data = ma_samp_clust2, aes(x = long, y = lat)) + 
-  geom_point(aes(color = clust2)) +
-  #geom_text_repel(aes(label=INSTNM, color = clust2), size = 3) +
-  coord_fixed() +
-  geom_point(data = as.data.frame(km2_out$centers), aes(x = long, y = lat), pch = "X", size = 4) +
-  labs(x = "x", y = "y" , color = "Cluster Assignment")+
-  ggtitle("Lab-style Hesitant, unstandardized")
-  
-```
-
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-set.seed(23)
-vars <- c("est_strong_hesitant", "long", "lat")
-km2_out <- kmeans(my_data0_map[,vars], centers=48)
-
-
-# add cluster assignment to the data frame
-ma_samp_clust2 <- my_data0_map %>%
-  mutate(clust2 = as.character(km2_out$cluster))
-
-# visualize the cluster assignments and centroids
-ggplot(data = ma_samp_clust2, aes(x = long, y = lat)) + 
-  geom_point(aes(color = clust2)) +
-  #geom_text_repel(aes(label=INSTNM, color = clust2), size = 3) +
-  coord_fixed() +
-  geom_point(data = as.data.frame(km2_out$centers), aes(x = long, y = lat), pch = "X", size = 4) +
-  labs(x = "x", y = "y" , color = "Cluster Assignment")+
-  ggtitle("Lab-style Strongly Hesitant, unstandardized")
-```
-
-
-
-
-
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-# add the additional variables needed to our sample dataset 
-ma_samp2 <- my_data0_map %>%
-  select(est_strong_hesitant, long, lat)%>%
+#standardizing values
+std_both <- my_data0_map %>%
+  select(est_hesitant, est_strong_hesitant, long, lat)%>%
   mutate_if(is.numeric, funs(`std`=scale(.) %>% as.vector())) %>% 
   janitor::clean_names() %>% 
-  #rename(avg_cost = costt4_a, avg_cost_std = costt4_a_std, prop_math = pcip27, prop_math_std = pcip27_std) %>%
-  # drop 3 extra Wentworth rows with missing values
-  # note that kmeans function won't work if there are NAs
   drop_na()
-
-glimpse(ma_samp2)
 
 
 set.seed(23)
-## on standardized variables
-vars_std <- c("est_strong_hesitant_std","long_std", "lat_std")
-km3_out_std <- kmeans(ma_samp2[,vars_std]
-                        , centers=48)
-
-## on unstandardized variables (for comparison)
-vars_unstd <- c("est_strong_hesitant","long", "lat")
-km3_out_unstd <- kmeans(ma_samp2[,vars_unstd]
-                           , centers=48)
+vars_std_hes <- c("est_hesitant_std","long_std", "lat_std")
+km_std_hes <- kmeans(std_both[,vars_std_hes], centers=48)
+vars_std_strong <- c("est_strong_hesitant_std","long_std", "lat_std")
+km_std_strong <- kmeans(std_both[,vars_std_strong], centers=48)
 
 
 # add cluster assignments to the data frame
-ma_samp2_clust3 <- ma_samp2 %>%
-  mutate(clust3_std = as.character(km3_out_std$cluster)
-         ,clust3_unstd = as.character(km3_out_unstd$cluster))
-```
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-# #unstandardized
-# ggplot(data = ma_samp2_clust3, aes(x = long, y = lat)) + 
-#   geom_point(aes(color = clust3_unstd)) +
-#   #coord_fixed() +
-#   coord_fixed(ratio = 1.3)+
-#   labs(x = "x", y = "y" , color = "Cluster Assignment")+
-#   ggtitle("Lab-style Strong Hesitant, unstandardized")
+map_std_both <- std_both %>%
+  mutate(clust_std_hes = as.character(km_std_hes$cluster)
+         ,clust_std_strong = as.character(km_std_strong$cluster))
 
 
 #standardized
-ggplot(data = ma_samp2_clust3, aes(x = long_std, y = lat_std)) + 
-  geom_point(aes(color = clust3_std)) +
-  #coord_fixed() +
+ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) + 
+  geom_point(aes(color = clust_std_hes)) +
+  coord_fixed(ratio = 0.5)+
+  labs(x = "x", y = "y" , color = "Cluster Assignment")+
+  ggtitle("Lab-style Hesitant, standardized")
+
+#standardized
+ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) + 
+  geom_point(aes(color = clust_std_strong)) +
+  coord_fixed(ratio = 0.5)+
+  labs(x = "x", y = "y" , color = "Cluster Assignment")+
+  ggtitle("Lab-style Strong Hesitant, standardized")
+
+```
+
+
+### Maps
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#standardizing values
+std_both <- my_data0_map %>%
+  select(est_hesitant, est_strong_hesitant, long, lat)%>%
+  mutate_if(is.numeric, funs(`std`=scale(.) %>% as.vector())) %>% 
+  janitor::clean_names() %>% 
+  drop_na()
+
+
+head(my_data0_map)
+head(std_both)
+
+
+set.seed(23)
+vars_std_hes <- c("est_hesitant_std","long_std", "lat_std")
+km_std_hes <- kmeans(std_both[,vars_std_hes], centers=48)
+vars_std_strong <- c("est_strong_hesitant_std","long_std", "lat_std")
+km_std_strong <- kmeans(std_both[,vars_std_strong], centers=48)
+
+
+# add cluster assignments to the data frame
+map_std_both <- std_both %>%
+  mutate(clust_std_hes = as.character(km_std_hes$cluster)
+         ,clust_std_strong = as.character(km_std_strong$cluster))
+
+
+#standardized
+ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) + 
+  geom_point(aes(color = clust_std_hes)) +
+  coord_fixed(ratio = 0.5)+
+  labs(x = "x", y = "y" , color = "Cluster Assignment")+
+  ggtitle("Lab-style Hesitant, standardized")
+
+#standardized
+ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) + 
+  geom_point(aes(color = clust_std_strong)) +
   coord_fixed(ratio = 0.5)+
   labs(x = "x", y = "y" , color = "Cluster Assignment")+
   ggtitle("Lab-style Strong Hesitant, standardized")
@@ -349,83 +289,41 @@ ggplot(data = ma_samp2_clust3, aes(x = long_std, y = lat_std)) +
 
 
 
+## 
 
 
+These clusters seem to be in the shape of states in some regions, so to check my hypothesis I overlaid the cluster maps with a us state map.
 
 
-
-*Now what I originally had:*
-
-Map of Hes
-```{r hesitant, echo=FALSE, warning=FALSE, message=FALSE}
-my_data0_map_cluster <- my_data0_map %>%
-  select(est_hesitant, long, lat)
-
-set.seed(15)
-library(mclust)
-county_clusts <- my_data0_map_cluster %>%
-  kmeans(centers = 48)%>%
-  fitted("classes")%>%
-  as.character()
-
-my_data0_map_cluster <- my_data0_map_cluster %>% mutate(cluster = county_clusts)
-
-my_data0_map_cluster %>% ggplot(aes(x = long, y = lat)) +
-  geom_point(aes(color = cluster), alpha = 0.5)+
-  coord_fixed(ratio = 1.3)+
-  ggtitle("My-style Hesitant, unstandardized")
-```
-
-Map of strongly Hes
-```{r strong hesitant, echo=FALSE, warning=FALSE, message=FALSE}
-my_data0_map_cluster2 <- my_data0_map %>%
-  select(est_strong_hesitant, long, lat)
-
-set.seed(15)
-library(mclust)
-county_clusts <- my_data0_map_cluster2 %>%
-  kmeans(centers = 48)%>%
-  fitted("classes")%>%
-  as.character()
-
-my_data0_map_cluster2 <- my_data0_map_cluster2 %>% mutate(cluster = county_clusts)
-
-my_data0_map_cluster2 %>% ggplot(aes(x = long, y = lat)) +
-  geom_point(aes(color = cluster), alpha = 0.5)+
-  coord_fixed(ratio = 1.3)+
-  ggtitle("My-style Strong Hesitant, unstandardized")
-```
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ usa_states <- map_data(map = "state", region = ".")
+ 
+p_hes<- ggplot() +
+  geom_point(data = map_std_both, 
+                 aes(x = long, y = lat, color =clust_std_hes), 
+                 alpha = 0.8)+
+  theme(legend.position = "none")
+  
+p_hes+ geom_polygon(data = usa_states, aes(x = long, y= lat, group = group),fill="NA", colour = "black") +
+  geom_path(color = "white") +
+  coord_equal()+
+  coord_fixed(ratio = 1.4) +
+  ggtitle("Lab-style Hesitant, standardized, with state lines")
+  
 
 
-
-
-
-# end
-
-
-
-
-
-These clusters seem to be in the shape of states, but I want to compare it to the US map
-
-
-
-
-
-
-
-
-
-## Code2
-
-```{r, echo=FALSE}
-usa_states <- map_data(map = "state", region = ".")
-
-ggplot()+
-  geom_point(data = my_data0_map_cluster, aes(x = long, y = lat, color = cluster), alpha = 0.5)+
-  geom_polygon(data = usa_states, aes(x = long, y = lat, group = group),fill="NA", colour = "black") +
-  theme_void()+
-  theme(legend.position="none")
+p_strong<- ggplot() +
+  geom_point(data = map_std_both, 
+                 aes(x = long, y = lat, color =clust_std_strong), 
+                 alpha = 0.8)+
+  theme(legend.position = "none")
+  
+p_strong + geom_polygon(data = usa_states, aes(x = long, y= lat, group = group),fill="NA", colour = "black") +
+  geom_path(color = "white") +
+  coord_equal()+
+  coord_fixed(ratio = 1.4) +
+  ggtitle("Lab-style Strong Hesitant, standardized, with state lines")
+  
 ```
 
 

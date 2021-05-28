@@ -56,7 +56,7 @@ I investigated a CDC published dataset titled ["Vaccine Hesitancy for COVID-19: 
 
 ## Variables of Interest
 
-The dataset contained several demographic variables measured for each U.S. county. The variables of interest for this project are  *"Estimated Hesitant"* and *"Estimated Strongly Hesitant"*, which measure the percent of adults in each county who indicated they are either __hesitant__, or __strongly hesitant__, respectively, to get vaccinated. Due to the phrasing of the variable description, I assume that survey respondents who indicated either "Hesitant" or "Strongly Hesitant" are all adults who have not yet received a covid vaccine. You can check out the ASPE's methodology for these estimates [here](https://aspe.hhs.gov/system/files/pdf/265341/vaccine-hesitancy-COVID-19-Methodology.pdf). 
+The dataset contained several demographic variables measured for each U.S. county. The variables of interest for this project are  *"Estimated Hesitant"* and *"Estimated Strongly Hesitant"*, which measure the percent of adults in each county who indicated they are either __hesitant__, or __strongly hesitant__, respectively, to get vaccinated. Due to the phrasing of the variable description, I assume that survey respondents who indicated either "Hesitant" or "Strongly Hesitant" are all adults who __have not yet received a covid vaccine__. You can check out the ASPE's methodology for these estimates [here](https://aspe.hhs.gov/system/files/pdf/265341/vaccine-hesitancy-COVID-19-Methodology.pdf). 
 
 ## Data Wrangling {.tabset .tabset-fade .tabset-pills}
 
@@ -157,7 +157,7 @@ ggplot(my_data0_map, aes(x = long, y = lat, group = group_county, fill = est_str
 
 
 
-# H1: Analysis of Maps
+# Analysis of Maps
 
 I observed a striking visual pattern in this mapping of county hesitancy levels. In many regions of the map, I see geometries of similar colored counties juxtaposed with groups of different colored counties. For example, take a look at this region in the midwest:
 
@@ -187,24 +187,20 @@ ggplot() +
   geom_text(aes(label = "Iowa", x = -95, y = 42)) +
   geom_text(aes(label = "Nebraska", x = -100, y = 42)) +
   theme_void() +
-  coord_fixed(xlim = c(-110, -90),  ylim = c(42, 49.5), ratio = 1.3) +
+  #coord_fixed(xlim = c(-110, -90),  ylim = c(42, 49.5), ratio = 1.3) +
   labs(fill = "Proportion of residents STRONGLY hesitant to be vaccinated") +
   theme(legend.position="bottom")+
   scale_fill_distiller(palette = "Spectral")
 ```
 
-From this test, it appears that county hesitancy rates are clustered state identity. Why else would we see such distinct patterns of hesitancy on state borders? I ran a cluser analysis to see if I was making this trend up or not.
+From this test, it appears that adjacent counties are less likely to have similar hesitancy levels if the adjacency occurs over a state border. From this observation, I hypothesized that county hesitancy rates are clustered around state identity. Why else would we see such distinct patterns of hesitancy on state borders? I ran a cluster analysis to see if I was imagining this trend up or not.
 
 
 
-## {.tabset .tabset-fade .tabset-pills}
+## Cluster Analysis{.tabset .tabset-fade .tabset-pills}
 
 ### Code
 ```{r, eval=FALSE, warning=FALSE, message=FALSE}
-
-head(my_data0_map)
-
-
 #standardizing values
 std_both <- my_data0_map %>%
   select(est_hesitant, est_strong_hesitant, long, lat)%>%
@@ -226,14 +222,14 @@ map_std_both <- std_both %>%
          ,clust_std_strong = as.character(km_std_strong$cluster))
 
 
-#standardized
+#map of standardized hesitancy
 ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) + 
   geom_point(aes(color = clust_std_hes)) +
   coord_fixed(ratio = 0.5)+
   labs(x = "x", y = "y" , color = "Cluster Assignment")+
   ggtitle("Lab-style Hesitant, standardized")
 
-#standardized
+#standardized of standardized strong hesitancy
 ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) + 
   geom_point(aes(color = clust_std_strong)) +
   coord_fixed(ratio = 0.5)+
@@ -254,10 +250,6 @@ std_both <- my_data0_map %>%
   drop_na()
 
 
-head(my_data0_map)
-head(std_both)
-
-
 set.seed(23)
 vars_std_hes <- c("est_hesitant_std","long_std", "lat_std")
 km_std_hes <- kmeans(std_both[,vars_std_hes], centers=48)
@@ -276,23 +268,19 @@ ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) +
   geom_point(aes(color = clust_std_hes)) +
   coord_fixed(ratio = 0.5)+
   labs(x = "x", y = "y" , color = "Cluster Assignment")+
-  ggtitle("Lab-style Hesitant, standardized")
+  ggtitle("Standardized Clustering of Hesitancy, Lat, and Long")
 
 #standardized
 ggplot(data = map_std_both, aes(x = long_std, y = lat_std)) + 
   geom_point(aes(color = clust_std_strong)) +
   coord_fixed(ratio = 0.5)+
   labs(x = "x", y = "y" , color = "Cluster Assignment")+
-  ggtitle("Lab-style Strong Hesitant, standardized")
-
+  ggtitle("Standardized Clustering of Strong Hesitancy, Lat, and Long")
 ```
 
 
 
-## 
-
-
-These clusters seem to be in the shape of states in some regions, so to check my hypothesis I overlaid the cluster maps with a us state map.
+## Cluster Maps Overlaid with U.S. State Map
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
@@ -331,7 +319,39 @@ p_strong + geom_polygon(data = usa_states, aes(x = long, y= lat, group = group),
 
 # Conclusion
 
-My conclusion blah blah blah
+Overall, I'm not exactly sure what my findings mean. Along several state borders in the County Hesitancy maps, such as Washington-Idaho (who elected Biden and Trump in 2020, respectively), Vermont-New York (Biden-Biden), Mississippi-Alabama (Trump-Trump), and all boarders of Wyoming and North Dakota (Trump States with both Biden and Trump State Neighbors), there is a visually clear difference in color between adjacent counties on opposing sides of the unmarked state lines. 
+
+This observation does not hold across the country: Utah-Colorado (Trump-Biden), New Mexico-Texas(Biden-Trump), Kansas-Nebraska(Trump-Trump), Illinois-Indiana(Biden-Trump), Vermont-Massachusets (Biden-Biden) and many other borders do not have clear visual differences in their scaled fill colors. If I were told that covid vaccine hesitancy varried greatly across SOME but not all state borders before seeing the maps, I would have assumed that the borders with the greatest divide were those between Biden and Trump states. However, this is not generally the case. 
+
+
+
+## Possible explanations
+
+To identify explanatory factors for my results, three unit levels must be considered: the individual unit, the county unit, and the state unit. At the most base level, individual people are members of a county and a state. There are a huge number of factors that go into any individual's hesitancy to get a COVID vaccine: personal vaccine history, time scarcity, access to transportation, education, politics, social networks, employment type, etc. This project aimed to investigate vaccine hesitancy at the County Unit level. My variables of interest, Estimated Proportion of County Residents Hesitant to get a Covid Vaccine, and Estimated Proportion of County Residents Strongly Hesitant to get a Covid Vaccine, represent aggregate measures of all the individual hesitancy statuses of county residents--- individual units as approximated and extrapolated by the Department of Health and Human Services. 
+
+The dataset I wrangled and plotted for this project provided county-level data, but my plots indicated that counties within the same state were often similar in fill color, and thus similar in hesitancy levels to other counties in the state. However in several states, like New Mexico, Arizona, North Dakota, South Dakota, and Kentucky, there was noticiable variation between counties within state boundaries. A possible explanation for these patches of increased or decreased hesitancy includes counties with large populations that were eligble to receive a covid vaccine early in the vaccine rollout period. In these counties, residents who have not yet been vaccinated, and thus provided a datapoint for the poll, might be extreme holdouts. These might be counties which encompass tribal reservations (who recieved priority doses via the Indian Health Service early in vaccine rollout), counties where many workers are employed at meatprocessing facilities (essential workers), or counties with university and medical campuses. 
+
+My focus however is on why county hesitancy levels frequently differed so greatly across state borders. Aside from state covid policies that might incentivize getting vaccinated, and state-specific vaccine distribution plans that might make getting a vaccine easy or difficult, I think the most likely factor driving state hesitancy levels are education systems. Assuming people live in the state they were educated in and went to public schools, adults might be representative of the state education system. If one state prioritizes education funding in its budget and can provide a strong science curriculum for all students in k-12, there might be a greater aggregate understanding of and faith in the scientific principles behind vaccines. On the other hand, if a neighboring state had a poorly funded education system, then residents might posess a much smaller educational base. This might explain why two adjacent counties with similar economies and demographics might have greater difference in vaccine acceptance if they are on opposite sides of state lines.
+
+
+## Adressing Limitations
+Impact of Estimates
+What was "hesitant vs strongly hesitant"
+Impact of tribal reservations
+Jannsen scare
+
+## Further Research
+Further research would be useful to both make sense of my findings and to verify my methods. 
+
+In particular, I'd love to see an updated CDC dataset of hesitancy levels as measured in May, then June, then July, and so on. 
+
+For my initial Shiny app, I worked with vaccine distribution datasets that got updated weekly, and contained datapoints from each week going back to mid december. I was able to make sense of an individual week's data snapshot by viewing it in the context of historic trends. Even though my variable of interest was simple -- exact number of vaccine doses allocted to each state in a given week -- I was only able to make sense of a "good" week of distribution versus a "bad" week by comparing it with the trendlines. 
+
+A major limitation of this project was that the dataset I worked with only had one round of data collection. An estimated 30% hesitancy rate in a given county might be high in comparison to other counties *on April 30*, but without historical information on that county's hesitancy we should not discount it as a sign of poor progress, or flag the county as a priority area for concern. Say the county with 30% hesitancy had been steadily dropping from an initial 70% hesitancy rate back in March. With that historical trend in mind, the 30% county is a lot less worrisome than a county that on April 30th had 25% hesitancy, but had stagnated at that level for many months or even was experiencing a rising rate of hesitancy. 
+
+
+
+
 
 ## Sources used in this project
 
@@ -342,6 +362,8 @@ My conclusion blah blah blah
 <!-- actual aspe site -->
 - [https://aspe.hhs.gov/pdf-report/vaccine-hesitancy](https://aspe.hhs.gov/pdf-report/vaccine-hesitancy)
 - [methodology](https://aspe.hhs.gov/system/files/pdf/265341/vaccine-hesitancy-COVID-19-Methodology.pdf)
+-[https://www.nytimes.com/interactive/2020/11/03/us/elections/results-president.html](https://www.nytimes.com/interactive/2020/11/03/us/elections/results-president.html)
+
 
 
 
